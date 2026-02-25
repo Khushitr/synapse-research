@@ -1,6 +1,4 @@
 import os, re
-from langchain_groq import ChatGroq
-from langchain_core.messages import HumanMessage, SystemMessage
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -10,7 +8,13 @@ def synthesize_report(user_query: str, chunks: list[dict], deep_mode: bool = Fal
 
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        raise EnvironmentError("GROQ_API_KEY is not set. Add it to your .env file or Streamlit secrets.")
+        raise EnvironmentError("GROQ_API_KEY is not set.")
+
+    # Set env var so ChatGroq picks it up automatically — works on all versions
+    os.environ["GROQ_API_KEY"] = api_key
+
+    from langchain_groq import ChatGroq
+    from langchain_core.messages import HumanMessage, SystemMessage
 
     sources: dict[str, dict] = {}
     counter = 1
@@ -29,36 +33,37 @@ def synthesize_report(user_query: str, chunks: list[dict], deep_mode: bool = Fal
     chunks_text = "\n\n---\n\n".join(formatted)
 
     word_target = "1500-2000" if deep_mode else "600-900"
-    depth_note = "Be VERY thorough, detailed and comprehensive. Include examples, analogies, and real-world applications." if deep_mode else "Be clear and concise."
+    depth_note = (
+        "Be VERY thorough and comprehensive. Include examples, analogies, and real-world applications."
+        if deep_mode else "Be clear and concise."
+    )
 
-    system = f"""You are an expert research analyst writing for a curious, intelligent audience.
-Make complex topics fascinating — like the best science journalists do.
+    system = (
+        "You are an expert research analyst writing for a curious, intelligent audience.\n"
+        "Make complex topics fascinating — like the best science journalists do.\n\n"
+        "RULES:\n"
+        "1. Use ONLY information from the provided source chunks.\n"
+        "2. Cite EVERY factual claim inline as [1], [2], etc.\n"
+        "3. Write EXACTLY these sections with ## headings:\n"
+        "   ## Introduction\n"
+        "   ## Key Findings\n"
+        "   ## Contradictions & Open Debates\n"
+        "   ## Conclusion\n"
+        f"4. {depth_note}\n"
+        f"5. Target: {word_target} words.\n"
+        "6. Make it ENGAGING — use analogies, surprising facts, vivid language.\n"
+        "7. Do NOT include a Sources section — it will be appended automatically.\n"
+        "8. Start immediately with ## Introduction."
+    )
 
-RULES:
-1. Use ONLY information from the provided source chunks.
-2. Cite EVERY factual claim inline as [1], [2], etc.
-3. Write EXACTLY these sections with ## headings:
-   ## Introduction
-   ## Key Findings
-   ## Contradictions & Open Debates
-   ## Conclusion
-4. {depth_note}
-5. Target: {word_target} words.
-6. Make it ENGAGING — use analogies, surprising facts, vivid language.
-7. Do NOT include a Sources section — appended automatically.
-8. Start immediately with ## Introduction."""
-
-    user_prompt = f"""Research Question: {user_query}
-{"[DEEP RESEARCH MODE — write a comprehensive detailed report]" if deep_mode else ""}
-
-Source Chunks:
-{chunks_text}
-
-Write the report now."""
+    user_prompt = (
+        f"Research Question: {user_query}\n"
+        f"{'[DEEP RESEARCH MODE]' if deep_mode else ''}\n\n"
+        f"Source Chunks:\n{chunks_text}\n\nWrite the report now."
+    )
 
     llm = ChatGroq(
         model="llama-3.3-70b-versatile",
-        api_key=api_key,
         temperature=0.3,
         max_tokens=3000 if deep_mode else 1800,
     )
