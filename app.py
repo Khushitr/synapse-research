@@ -179,10 +179,10 @@ _MINDMAP_TEMPLATE = "<!DOCTYPE html><html><head><style>* {box-sizing:border-box;
 
 def generate_subtopics(query):
     from langchain_groq import ChatGroq
-    from langchain.schema import HumanMessage, SystemMessage
+    from langchain_core.messages import HumanMessage, SystemMessage
     from dotenv import load_dotenv
     load_dotenv()
-    llm = ChatGroq(model="llama-3.3-70b-versatile", groq_api_key=os.getenv("GROQ_API_KEY"), temperature=0.4, max_tokens=600)
+    llm = ChatGroq(model="llama-3.3-70b-versatile", api_key=os.getenv("GROQ_API_KEY"), temperature=0.4, max_tokens=600)
     system_msg = (
         "You are a knowledge graph designer. Given a topic, output exactly 6 subtopics "
         "that EXTEND the subject beyond a basic overview. "

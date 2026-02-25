@@ -1,14 +1,13 @@
-# ── LangChain stack ───────────────────────────────────────────────────────────
-langchain==0.2.16
-langchain-core==0.2.38
-langchain-community==0.2.16
+# ── LangChain 0.3.x stack (pydantic v2, Python 3.13 compatible) ──────────────
+langchain==0.3.7
+langchain-core==0.3.28
+langchain-community==0.3.7
 langchain-groq==0.2.3
-langchain-text-splitters==0.2.4
-langsmith==0.1.147
+langchain-text-splitters==0.3.3
+langsmith==0.2.3
 
-# ── Groq + HTTP client (must be compatible pair) ─────────────────────────────
-groq==0.13.1
-httpx>=0.23.0,<0.28.0
+# ── Groq client ───────────────────────────────────────────────────────────────
+groq==0.13.0
 
 # ── Scraping ──────────────────────────────────────────────────────────────────
 requests==2.32.3
@@ -25,5 +24,4 @@ reportlab==4.2.5
 
 # ── Utilities ─────────────────────────────────────────────────────────────────
 python-dotenv==1.0.1
-tenacity==8.5.0
-packaging==24.2
+pydantic>=2.0.0
