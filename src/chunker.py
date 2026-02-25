@@ -15,7 +15,10 @@ chunk_size=500, chunk_overlap=50 means:
     (so ideas spanning a boundary aren't lost)
 """
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+try:
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+except ImportError:
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 
 def chunk_pages(

@@ -1,13 +1,28 @@
+# ── LangChain stack (pinned to a compatible set) ─────────────────────────────
 langchain==0.2.16
 langchain-core==0.2.38
 langchain-community==0.2.16
-langchain-groq
-groq
+langchain-groq==0.1.9
+langchain-text-splitters==0.2.4
+langsmith==0.1.147
 
-requests
-beautifulsoup4
-lxml
+# ── Groq client ───────────────────────────────────────────────────────────────
+groq==0.9.0
 
-streamlit
-reportlab
-python-dotenv
+# ── Scraping ──────────────────────────────────────────────────────────────────
+requests==2.32.3
+beautifulsoup4==4.12.3
+lxml==5.3.0
+
+# ── Embeddings (local, no API needed) ────────────────────────────────────────
+sentence-transformers==3.2.1
+numpy==1.26.4
+
+# ── UI & Export ───────────────────────────────────────────────────────────────
+streamlit==1.40.1
+reportlab==4.2.5
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+python-dotenv==1.0.1
+tenacity==8.5.0
+packaging==24.2
