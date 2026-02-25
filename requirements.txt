@@ -1,22 +1,12 @@
-# ── Core LLM & Agent ──────────────────────────────────────────────────────────
-langchain==0.3.7
-langchain-groq==0.2.1
-langchain-community==0.3.7
-groq==0.11.0
+langchain
+langchain-groq
+langchain-community
+groq
 
-# ── Web & Scraping ────────────────────────────────────────────────────────────
-requests==2.32.3
-beautifulsoup4==4.12.3
-lxml==5.3.0
+requests
+beautifulsoup4
+lxml
 
-# ── Embeddings (local) ────────────────────────────────────────────────────────
-sentence-transformers==3.2.1
-torch==2.4.1
-numpy>=1.24.0
-
-# ── UI & Export ───────────────────────────────────────────────────────────────
-streamlit==1.40.1
-reportlab==4.2.5
-
-# ── Utilities ─────────────────────────────────────────────────────────────────
-python-dotenv==1.0.1
+streamlit
+reportlab
+python-dotenv
