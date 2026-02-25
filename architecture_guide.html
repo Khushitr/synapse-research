@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Research Assistant — Architecture & Guide</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.6; }
+
+  .page { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  h1 { font-size: 2.4rem; font-weight: 800; text-align: center; color: #f8fafc; margin-bottom: 0.3rem; }
+  .subtitle { text-align: center; color: #94a3b8; font-size: 1.1rem; margin-bottom: 3rem; }
+  h2 { font-size: 1.5rem; font-weight: 700; color: #60a5fa; margin: 2.5rem 0 1rem; border-left: 4px solid #3b82f6; padding-left: 0.8rem; }
+  h3 { font-size: 1.1rem; font-weight: 600; color: #f1f5f9; margin-bottom: 0.5rem; }
+  p { color: #cbd5e1; margin-bottom: 0.8rem; }
+  code { background: #1e293b; color: #7dd3fc; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.88rem; }
+
+  /* ─── Pipeline Flow ─────────────────────────────────────────── */
+  .pipeline { display: flex; flex-direction: column; gap: 0; margin: 2rem 0; }
+  .pipe-step { display: flex; align-items: stretch; gap: 0; }
+  .pipe-card {
+    flex: 1;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+    position: relative;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .pipe-card:hover { transform: translateX(4px); border-color: #60a5fa; }
+  .pipe-connector {
+    width: 2px;
+    background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
+    margin: 0 auto;
+    height: 28px;
+    flex-shrink: 0;
+  }
+  .pipe-connector-wrap { width: 60px; display: flex; justify-content: center; align-items: center; }
+  .pipe-icon { font-size: 2rem; margin-bottom: 0.4rem; }
+  .pipe-title { font-weight: 700; font-size: 1.05rem; color: #f8fafc; }
+  .pipe-file { font-size: 0.78rem; color: #64748b; font-family: monospace; margin: 0.15rem 0; }
+  .pipe-desc { font-size: 0.9rem; color: #94a3b8; margin-top: 0.4rem; }
+  .pipe-tech { display: inline-block; background: #0f172a; border: 1px solid #3b82f6; color: #93c5fd; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 20px; margin: 0.2rem 0.1rem 0; }
+  .pipe-input-badge { background: #064e3b; border: 1px solid #10b981; color: #6ee7b7; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 20px; margin: 0.2rem 0.1rem 0; display: inline-block; }
+  .pipe-output-badge { background: #1e1b4b; border: 1px solid #8b5cf6; color: #c4b5fd; font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 20px; margin: 0.2rem 0.1rem 0; display: inline-block; }
+
+  /* ─── Tech explainer cards ───────────────────────────────────── */
+  .tech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.2rem; margin: 1.5rem 0; }
+  .tech-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 1.3rem;
+    transition: border-color 0.2s;
+  }
+  .tech-card:hover { border-color: #60a5fa; }
+  .tech-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; margin-bottom: 0.4rem; }
+  .tech-name { font-size: 1.1rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.6rem; }
+  .tech-what { color: #94a3b8; font-size: 0.9rem; margin-bottom: 0.6rem; }
+  .tech-how { color: #cbd5e1; font-size: 0.88rem; background: #0f172a; padding: 0.6rem 0.8rem; border-radius: 6px; border-left: 3px solid #3b82f6; }
+  .free-badge { background: #14532d; color: #86efac; font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 20px; border: 1px solid #22c55e; display: inline-block; margin-left: 0.5rem; vertical-align: middle; }
+
+  /* ─── RAG explanation ────────────────────────────────────────── */
+  .rag-diagram { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; margin: 1.5rem 0; }
+  .rag-box { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 1rem; text-align: center; }
+  .rag-box.highlight { border-color: #8b5cf6; background: #1e1b4b; }
+  .rag-arrow { color: #60a5fa; font-size: 1.5rem; text-align: center; }
+  .rag-label { font-size: 0.8rem; color: #64748b; margin-bottom: 0.3rem; }
+  .rag-value { font-size: 1rem; font-weight: 600; color: #f8fafc; }
+
+  /* ─── Code blocks ────────────────────────────────────────────── */
+  .code-block { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 1.2rem 1.5rem; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.84rem; overflow-x: auto; margin: 1rem 0; line-height: 1.8; }
+  .code-comment { color: #64748b; }
+  .code-keyword { color: #c792ea; }
+  .code-string { color: #c3e88d; }
+  .code-fn { color: #82aaff; }
+  .code-var { color: #f78c6c; }
+  .code-type { color: #ffcb6b; }
+
+  /* ─── Setup steps ────────────────────────────────────────────── */
+  .setup-steps { counter-reset: step-counter; }
+  .setup-step {
+    display: flex; gap: 1rem; align-items: flex-start;
+    background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+    padding: 1.2rem; margin-bottom: 0.8rem;
+  }
+  .step-num {
+    counter-increment: step-counter;
+    background: #3b82f6; color: white; width: 2rem; height: 2rem;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.9rem; flex-shrink: 0;
+  }
+  .step-content h3 { margin-bottom: 0.3rem; }
+  .step-content p { margin: 0; font-size: 0.9rem; }
+
+  /* ─── Folder tree ─────────────────────────────────────────────── */
+  .folder-tree { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 1.5rem; font-family: monospace; font-size: 0.88rem; line-height: 2; }
+  .folder { color: #60a5fa; }
+  .file { color: #e2e8f0; }
+  .file-note { color: #64748b; }
+
+  /* ─── Example box ─────────────────────────────────────────────── */
+  .example-box { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 1.5rem; margin: 1rem 0; }
+  .example-input { background: #0f172a; border-left: 3px solid #22c55e; padding: 0.6rem 1rem; border-radius: 0 6px 6px 0; color: #86efac; font-size: 0.95rem; margin-bottom: 1rem; }
+  .example-query { background: #0f172a; border-left: 3px solid #60a5fa; padding: 0.5rem 1rem; border-radius: 0 6px 6px 0; color: #93c5fd; font-size: 0.85rem; margin: 0.3rem 0; font-family: monospace; }
+  .example-output { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 1rem; margin-top: 1rem; }
+  .example-output h4 { color: #60a5fa; font-size: 0.9rem; margin-bottom: 0.5rem; }
+  .example-output p { font-size: 0.88rem; color: #94a3b8; }
+
+  /* ─── Metrics ─────────────────────────────────────────────────── */
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+  .metric { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 1rem; text-align: center; }
+  .metric-num { font-size: 2rem; font-weight: 800; color: #60a5fa; }
+  .metric-label { font-size: 0.82rem; color: #94a3b8; margin-top: 0.2rem; }
+  .metric-sub { font-size: 0.75rem; color: #64748b; }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 1.7rem; }
+    .rag-diagram { grid-template-columns: 1fr; }
+    .rag-arrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>🔬 AI Research Assistant</h1>
+  <p class="subtitle">Complete Architecture Guide — How Every Piece Works & Fits Together</p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>📊 The Full Pipeline at a Glance</h2>
+
+  <div class="pipeline">
+
+    <div class="pipe-step">
+      <div class="pipe-card" style="border-color:#22c55e">
+        <div class="pipe-icon">💬</div>
+        <div class="pipe-title">User Query</div>
+        <div class="pipe-file">app.py — Streamlit input</div>
+        <div class="pipe-desc">A natural language question typed by the user in the Streamlit UI. Can be vague, specific, or multi-part.</div>
+        <span class="pipe-input-badge">Input: raw text</span>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-start;padding-left:2rem;"><div style="width:2px;height:28px;background:linear-gradient(#22c55e,#3b82f6)"></div></div>
+
+    <div class="pipe-step">
+      <div class="pipe-card">
+        <div class="pipe-icon">🤖</div>
+        <div class="pipe-title">Agent — Query Planner</div>
+        <div class="pipe-file">src/agent.py</div>
+        <div class="pipe-desc">Llama 3.3 70B analyses the question and generates 3 distinct, optimized sub-queries. This is the "agentic" layer — the LLM <em>decides</em> how to search.</div>
+        <span class="pipe-tech">LangChain ChatGroq</span>
+        <span class="pipe-tech">Llama 3.3 70B</span>
+        <span class="pipe-tech">Groq API (free)</span>
+        <br>
+        <span class="pipe-input-badge">In: raw query</span>
+        <span class="pipe-output-badge">Out: list of 3 search strings</span>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-start;padding-left:2rem;"><div style="width:2px;height:28px;background:linear-gradient(#3b82f6,#3b82f6)"></div></div>
+
+    <div class="pipe-step">
+      <div class="pipe-card">
+        <div class="pipe-icon">🔍</div>
+        <div class="pipe-title">Web Search</div>
+        <div class="pipe-file">src/search.py</div>
+        <div class="pipe-desc">Calls SerpAPI (Google) or Brave Search for each of the 3 queries — fetching 5 results each. Deduplicates by URL. Result: ≤15 unique URLs + titles + snippets.</div>
+        <span class="pipe-tech">SerpAPI</span>
+        <span class="pipe-tech">Brave Search API</span>
+        <span class="pipe-tech">requests</span>
+        <br>
+        <span class="pipe-input-badge">In: 3 query strings</span>
+        <span class="pipe-output-badge">Out: ~10-15 {url, title, description}</span>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-start;padding-left:2rem;"><div style="width:2px;height:28px;background:linear-gradient(#3b82f6,#f59e0b)"></div></div>
+
+    <div class="pipe-step">
+      <div class="pipe-card">
+        <div class="pipe-icon">📄</div>
+        <div class="pipe-title">Fetch & Clean Pages</div>
+        <div class="pipe-file">src/scraper.py</div>
+        <div class="pipe-desc">Downloads each URL as HTML. Strips &lt;nav&gt;, &lt;script&gt;, &lt;style&gt;, &lt;footer&gt;, &lt;header&gt;, ads. Extracts only &lt;p&gt; tag text. Handles timeouts, paywalls, and non-HTML gracefully with fallback to snippet.</div>
+        <span class="pipe-tech">requests</span>
+        <span class="pipe-tech">BeautifulSoup4</span>
+        <br>
+        <span class="pipe-input-badge">In: URLs</span>
+        <span class="pipe-output-badge">Out: {url, title, cleaned_text}</span>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-start;padding-left:2rem;"><div style="width:2px;height:28px;background:linear-gradient(#f59e0b,#8b5cf6)"></div></div>
+
+    <div class="pipe-step">
+      <div class="pipe-card">
+        <div class="pipe-icon">✂️</div>
+        <div class="pipe-title">Text Chunker</div>
+        <div class="pipe-file">src/chunker.py</div>
+        <div class="pipe-desc">Splits each page's text into 500-character overlapping segments (50-char overlap). Tags every chunk with its source URL as metadata. A 3000-char page becomes ~7 chunks.</div>
+        <span class="pipe-tech">LangChain RecursiveCharacterTextSplitter</span>
+        <br>
+        <span class="pipe-input-badge">In: {url, text}</span>
+        <span class="pipe-output-badge">Out: ~100-200 {chunk_text, url, chunk_id}</span>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-start;padding-left:2rem;"><div style="width:2px;height:28px;background:linear-gradient(#8b5cf6,#a855f7)"></div></div>
+
+    <div class="pipe-step">
+      <div class="pipe-card" style="border-color:#8b5cf6">
+        <div class="pipe-icon">🧠</div>
+        <div class="pipe-title">RAG — Embed & Retrieve</div>
+        <div class="pipe-file">src/vector_store.py</div>
+        <div class="pipe-desc">Embeds every chunk into a 384-dim vector using MiniLM (100% local, no API). Stores in ChromaDB. Embeds the user query the same way. Returns the 12 most similar chunks by cosine similarity.</div>
+        <span class="pipe-tech">sentence-transformers</span>
+        <span class="pipe-tech">all-MiniLM-L6-v2</span>
+        <span class="pipe-tech">ChromaDB</span>
+        <br>
+        <span class="pipe-input-badge">In: all chunks + user query</span>
+        <span class="pipe-output-badge">Out: top-12 most relevant chunks</span>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-start;padding-left:2rem;"><div style="width:2px;height:28px;background:linear-gradient(#a855f7,#ec4899)"></div></div>
+
+    <div class="pipe-step">
+      <div class="pipe-card">
+        <div class="pipe-icon">📝</div>
+        <div class="pipe-title">Report Synthesizer</div>
+        <div class="pipe-file">src/synthesizer.py</div>
+        <div class="pipe-desc">Constructs a detailed prompt with the 12 chunks (tagged with source numbers). Llama 3.3 70B writes a 4-section structured report. Sources are appended programmatically — every [N] maps to a verified URL.</div>
+        <span class="pipe-tech">LangChain ChatGroq</span>
+        <span class="pipe-tech">Llama 3.3 70B</span>
+        <br>
+        <span class="pipe-input-badge">In: 12 chunks + query</span>
+        <span class="pipe-output-badge">Out: structured Markdown report</span>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-start;padding-left:2rem;"><div style="width:2px;height:28px;background:linear-gradient(#ec4899,#22c55e)"></div></div>
+
+    <div class="pipe-step">
+      <div class="pipe-card" style="border-color:#22c55e">
+        <div class="pipe-icon">📋</div>
+        <div class="pipe-title">Rendered Report</div>
+        <div class="pipe-file">app.py — st.markdown()</div>
+        <div class="pipe-desc">Report renders in the Streamlit UI with headings, inline citations, and a clickable Sources section. User can download as a .md file.</div>
+        <span class="pipe-tech">Streamlit</span>
+        <span class="pipe-tech">Markdown</span>
+        <br>
+        <span class="pipe-input-badge">In: Markdown string</span>
+        <span class="pipe-output-badge">Out: rendered page + .md download</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>📐 Folder Structure</h2>
+
+  <div class="folder-tree">
+    <span class="folder">research-assistant/</span><br>
+    ├── <span class="file">app.py</span>             <span class="file-note"># 🖥️  Streamlit UI + pipeline orchestrator</span><br>
+    ├── <span class="file">requirements.txt</span>    <span class="file-note"># 📦  All dependencies</span><br>
+    ├── <span class="file">.env.example</span>        <span class="file-note"># 🔑  API key template (copy → .env)</span><br>
+    ├── <span class="file">.gitignore</span>          <span class="file-note"># 🙈  Keeps secrets + cache out of git</span><br>
+    ├── <span class="file">README.md</span>           <span class="file-note"># 📖  Documentation + setup guide</span><br>
+    │<br>
+    ├── <span class="folder">src/</span>               <span class="file-note"># 🔧  All pipeline modules</span><br>
+    │   ├── <span class="file">__init__.py</span>      <span class="file-note"># makes src/ a Python package</span><br>
+    │   ├── <span class="file">agent.py</span>         <span class="file-note"># 🤖  LLM query planner (agentic layer)</span><br>
+    │   ├── <span class="file">search.py</span>        <span class="file-note"># 🔍  SerpAPI / Brave Search</span><br>
+    │   ├── <span class="file">scraper.py</span>       <span class="file-note"># 📄  HTML fetcher + cleaner</span><br>
+    │   ├── <span class="file">chunker.py</span>       <span class="file-note"># ✂️   Text splitter</span><br>
+    │   ├── <span class="file">vector_store.py</span>  <span class="file-note"># 🧠  ChromaDB + MiniLM RAG core</span><br>
+    │   └── <span class="file">synthesizer.py</span>   <span class="file-note"># 📝  LLM report generator</span><br>
+    │<br>
+    └── <span class="folder">.streamlit/</span><br>
+        └── <span class="file">secrets.toml</span>     <span class="file-note"># 🔐  Streamlit Cloud secrets (gitignored)</span><br>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>🧠 Why RAG? (Retrieval-Augmented Generation Explained)</h2>
+
+  <p>Without RAG, you'd dump all fetched text directly into the LLM prompt. Problem: a typical research session fetches 50,000+ characters — far more than any LLM's context window. RAG solves this:</p>
+
+  <div class="rag-diagram">
+    <div class="rag-box">
+      <div class="rag-label">Without RAG</div>
+      <div class="rag-value">50,000 chars</div>
+      <div style="color:#94a3b8;font-size:0.8rem;margin-top:0.4rem;">Dump everything into prompt → hits token limit → fails or hallucinates</div>
+    </div>
+    <div class="rag-arrow">→</div>
+    <div class="rag-box highlight">
+      <div class="rag-label">With RAG</div>
+      <div class="rag-value">~6,000 chars</div>
+      <div style="color:#94a3b8;font-size:0.8rem;margin-top:0.4rem;">12 most relevant 500-char chunks → fits perfectly → grounded synthesis</div>
+    </div>
+  </div>
+
+  <div class="tech-grid" style="grid-template-columns:1fr 1fr 1fr;">
+    <div class="tech-card">
+      <div class="tech-label">Step 1</div>
+      <div class="tech-name">🔢 Embed Chunks</div>
+      <div class="tech-how">MiniLM converts each 500-char text chunk into a list of 384 numbers that capture its <strong>semantic meaning</strong>. "cure for cancer" and "cancer treatment breakthrough" will have similar vectors even though the words differ.</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-label">Step 2</div>
+      <div class="tech-name">🗄️ Store in ChromaDB</div>
+      <div class="tech-how">All chunk vectors go into ChromaDB — a local vector database. It organizes them using HNSW (a graph algorithm) so similarity searches are fast even with thousands of chunks.</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-label">Step 3</div>
+      <div class="tech-name">🎯 Cosine Similarity</div>
+      <div class="tech-how">The user query is also embedded. ChromaDB finds the 12 chunks whose vectors point in the most similar direction. Cosine similarity = angle between vectors (1.0 = identical meaning, 0.0 = unrelated).</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>⚙️ Every Technology Explained</h2>
+
+  <div class="tech-grid">
+
+    <div class="tech-card">
+      <div class="tech-label">LLM Provider</div>
+      <div class="tech-name">Groq + Llama 3.3 70B <span class="free-badge">FREE</span></div>
+      <div class="tech-what"><strong>What:</strong> Groq is a cloud platform that runs open-source LLMs at extreme speed (~500 tokens/second). Llama 3.3 70B is Meta's best open model — comparable to GPT-4.</div>
+      <div class="tech-how"><strong>In this project:</strong> Used twice — once in agent.py to plan queries, once in synthesizer.py to write the report. Free tier is generous enough for hundreds of queries/day.</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-label">Agent Framework</div>
+      <div class="tech-name">LangChain</div>
+      <div class="tech-what"><strong>What:</strong> Python library that makes it easy to chain LLM calls, manage prompts, and build pipelines. Provides ChatGroq integration and text splitters.</div>
+      <div class="tech-how"><strong>In this project:</strong> <code>ChatGroq</code> wraps the Groq API. <code>RecursiveCharacterTextSplitter</code> handles smart chunking. Prompt templates are built with <code>SystemMessage + HumanMessage</code>.</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-label">Search API</div>
+      <div class="tech-name">SerpAPI / Brave Search <span class="free-badge">FREE TIER</span></div>
+      <div class="tech-what"><strong>What:</strong> REST APIs that perform web searches and return structured JSON (title, URL, snippet) — no browser automation needed.</div>
+      <div class="tech-how"><strong>In this project:</strong> search.py auto-detects which key you've set. SerpAPI = 100/month free, Brave = 2000/month free. Results feed directly into the scraper.</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-label">Web Scraping</div>
+      <div class="tech-name">requests + BeautifulSoup4</div>
+      <div class="tech-what"><strong>What:</strong> <code>requests</code> downloads HTML over HTTP. <code>BeautifulSoup</code> parses that HTML into a tree you can navigate and manipulate in Python.</div>
+      <div class="tech-how"><strong>In this project:</strong> scraper.py fetches each URL, then calls <code>.decompose()</code> on noise tags (nav, script, footer) and extracts only <code>&lt;p&gt;</code> text. Falls back to the search snippet on failure.</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-label">Embeddings</div>
+      <div class="tech-name">all-MiniLM-L6-v2 <span class="free-badge">100% LOCAL</span></div>
+      <div class="tech-what"><strong>What:</strong> A 22MB sentence embedding model that converts text into 384-dimensional numerical vectors. Runs entirely on CPU — no API, no cost, no internet needed.</div>
+      <div class="tech-how"><strong>In this project:</strong> Every chunk and the user query are converted to vectors. Loaded once at startup and cached. Embedding 200 chunks takes ~2 seconds on CPU.</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-label">Vector Database</div>
+      <div class="tech-name">ChromaDB <span class="free-badge">LOCAL</span></div>
+      <div class="tech-what"><strong>What:</strong> An open-source, embeddable vector database. Stores embeddings with metadata and performs cosine similarity search in milliseconds.</div>
+      <div class="tech-how"><strong>In this project:</strong> Used in-memory mode (no files written). A fresh collection is created per query. Destroyed when the pipeline finishes. Zero configuration.</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-label">UI Framework</div>
+      <div class="tech-name">Streamlit</div>
+      <div class="tech-what"><strong>What:</strong> Python library that turns Python scripts into interactive web apps. No HTML/CSS/JS required — widgets are Python function calls.</div>
+      <div class="tech-how"><strong>In this project:</strong> <code>st.text_input</code> for query, <code>st.progress</code> for status, <code>st.markdown</code> for the report, <code>st.download_button</code> for export. Deploys free on Streamlit Cloud.</div>
+    </div>
+
+    <div class="tech-card">
+      <div class="tech-label">Text Splitting</div>
+      <div class="tech-name">RecursiveCharacterTextSplitter</div>
+      <div class="tech-what"><strong>What:</strong> LangChain's smart splitter that tries to split on paragraph → sentence → word → character boundaries in that order, preserving meaning.</div>
+      <div class="tech-how"><strong>In this project:</strong> chunk_size=500, chunk_overlap=50. A page with 3000 chars becomes ~7 chunks. The 50-char overlap means ideas near a boundary appear in both neighboring chunks.</div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>🔄 Worked Example — End to End</h2>
+
+  <div class="example-box">
+    <div class="example-input">💬 User types: "What are the latest breakthroughs in fusion energy?"</div>
+
+    <h3>Step 1 — Agent generates 3 queries:</h3>
+    <div class="example-query">1. "nuclear fusion energy breakthrough 2024 NIF"</div>
+    <div class="example-query">2. "private fusion companies Commonwealth Fusion TAE Technologies funding"</div>
+    <div class="example-query">3. "fusion reactor timeline challenges net energy gain"</div>
+
+    <br><h3>Step 2 — Search returns 15 URLs (5 per query, deduplicated)</h3>
+    <p style="font-size:0.88rem">e.g. nature.com/fusion-ignition, science.org/nif-result, reuters.com/cfs-funding, ...</p>
+
+    <br><h3>Step 3 — Scraper fetches 15 pages</h3>
+    <p style="font-size:0.88rem">12 succeed fully (80%), 3 fall back to snippet (paywall / timeout)</p>
+
+    <br><h3>Step 4 — Chunker creates ~150 chunks (500 chars each)</h3>
+    <p style="font-size:0.88rem">Each tagged: <code>{text: "NIF achieved ignition...", url: "nature.com/...", chunk_id: "042810_003"}</code></p>
+
+    <br><h3>Step 5 — RAG retrieves top 12 chunks by cosine similarity</h3>
+    <p style="font-size:0.88rem">Score 0.91: "The National Ignition Facility confirmed net energy gain on Dec 5 2022..."<br>
+    Score 0.88: "Commonwealth Fusion raised $1.8B to build a commercial reactor..."<br>
+    Score 0.85: "Critics note the 3.15 MJ yield required 300x more input energy from the building..."</p>
+
+    <br><h3>Step 6 — Synthesizer builds final report</h3>
+    <div class="example-output">
+      <h4>## Introduction</h4>
+      <p>Nuclear fusion — long considered the "always 20 years away" holy grail of clean energy — has entered a new phase defined by landmark achievements and serious commercial investment [1][2]...</p>
+      <h4>## Key Findings</h4>
+      <p>The National Ignition Facility achieved ignition in December 2022, delivering 3.15 MJ of fusion energy from a 2.05 MJ laser input — the first net fusion energy gain ever recorded [1]. Private investment has accelerated: Commonwealth Fusion Systems raised $1.8B in 2021 [2]...</p>
+      <h4>## Contradictions & Open Debates</h4>
+      <p>While NIF's result was historic, critics note the facility required ~300x more input power to operate than the energy delivered to the target [3]...</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>🚀 Setup Steps</h2>
+
+  <div class="setup-steps">
+    <div class="setup-step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h3>Get your free API keys</h3>
+        <p>• <strong>Groq</strong>: <code>console.groq.com</code> → Create account → API Keys → Create key<br>
+        • <strong>SerpAPI</strong>: <code>serpapi.com</code> → Sign up → Dashboard → Your API Key (100 free/mo)<br>
+        • OR <strong>Brave Search</strong>: <code>brave.com/search/api</code> → Subscribe to Free plan (2000/mo)</p>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h3>Clone and set up environment</h3>
+        <p><code>git clone &lt;your-repo&gt; && cd research-assistant</code><br>
+        <code>python -m venv venv && source venv/bin/activate</code> (Windows: <code>venv\Scripts\activate</code>)<br>
+        <code>pip install -r requirements.txt</code></p>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h3>Add your API keys</h3>
+        <p><code>cp .env.example .env</code> → open <code>.env</code> → paste your keys next to each variable name</p>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h3>Run locally</h3>
+        <p><code>streamlit run app.py</code> → opens at <code>http://localhost:8501</code></p>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <h3>Deploy to Streamlit Cloud</h3>
+        <p>Push to GitHub → go to <code>share.streamlit.io</code> → New app → select repo → App Settings → Secrets → paste your keys → Deploy</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>📏 Target Metrics (Rubric)</h2>
+
+  <div class="metrics-grid">
+    <div class="metric">
+      <div class="metric-num">5–10</div>
+      <div class="metric-label">Unique URLs</div>
+      <div class="metric-sub">per query after dedup</div>
+    </div>
+    <div class="metric">
+      <div class="metric-num">80%+</div>
+      <div class="metric-label">Pages Extracted</div>
+      <div class="metric-sub">successfully yield usable text</div>
+    </div>
+    <div class="metric">
+      <div class="metric-num">&lt;150</div>
+      <div class="metric-label">Words per Summary</div>
+      <div class="metric-sub">per source chunk</div>
+    </div>
+    <div class="metric">
+      <div class="metric-num">4</div>
+      <div class="metric-label">Report Sections</div>
+      <div class="metric-sub">Intro, Findings, Debates, Conclusion</div>
+    </div>
+    <div class="metric">
+      <div class="metric-num">100%</div>
+      <div class="metric-label">Citation Coverage</div>
+      <div class="metric-sub">every claim has a [N] inline</div>
+    </div>
+    <div class="metric">
+      <div class="metric-num">&lt;45s</div>
+      <div class="metric-label">End-to-End</div>
+      <div class="metric-sub">total response time</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <h2>💡 Key Design Decisions Explained</h2>
+
+  <div class="tech-grid">
+    <div class="tech-card">
+      <div class="tech-label">Why 3 queries?</div>
+      <div class="tech-name">Multi-angle Coverage</div>
+      <div class="tech-how">A single query surfaces one perspective. 3 queries — one for mechanism, one for applications, one for debates — ensures the report covers the topic comprehensively. The LLM agent decides the angles based on the question.</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-label">Why chunk at 500 chars?</div>
+      <div class="tech-name">Embedding Precision</div>
+      <div class="tech-how">Too-long chunks dilute the embedding (one vector tries to capture too many ideas). Too-short and you lose context. 500 chars ≈ 2–3 sentences — the sweet spot for semantic search accuracy with MiniLM.</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-label">Why 12 chunks?</div>
+      <div class="tech-name">Context Window Budget</div>
+      <div class="tech-how">12 × 500 chars = 6000 chars of evidence. That's ~1500 tokens — well within Llama 3.3's 8K context even after adding the system prompt. Enough to get diverse coverage without hitting limits.</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-label">Why append sources programmatically?</div>
+      <div class="tech-name">Citation Integrity</div>
+      <div class="tech-how">If you ask the LLM to write the Sources section, it might hallucinate URLs or swap them. By building the sources dict before the LLM call and appending it after, every [N] is guaranteed to map to a real, verified URL.</div>
+    </div>
+  </div>
+
+  <br><br>
+  <div style="text-align:center; color:#475569; font-size:0.85rem; padding: 2rem 0 0;">
+    Built with Llama 3.3 70B • ChromaDB • all-MiniLM-L6-v2 • LangChain • Streamlit — 100% free to run
+  </div>
+
+</div>
+</body>
+</html>
