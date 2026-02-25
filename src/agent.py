@@ -10,7 +10,7 @@ import os
 import ast
 import re
 from langchain_groq import ChatGroq
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain.schema import HumanMessage, SystemMessage
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,7 +28,7 @@ def generate_search_queries(user_query: str) -> list[str]:
     """
     llm = ChatGroq(
         model="llama-3.3-70b-versatile",
-        api_key=os.getenv("GROQ_API_KEY"),
+        groq_api_key=os.getenv("GROQ_API_KEY"),
         temperature=0.3,
         max_tokens=256,
     )
